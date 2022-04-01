@@ -15,6 +15,7 @@
  */
 
 import { parseCSV } from '@google-github-actions/actions-utils';
+import { getProjectID } from './action';
 
 /**
  * Parses a string of the format `outout:secret`. For example:
@@ -26,22 +27,23 @@ import { parseCSV } from '@google-github-actions/actions-utils';
  */
 export class Reference {
   // output is the name of the output variable.
-  readonly output: string;
+  readonly output: string = '';
 
   // project, name, and version are the secret ref
-  readonly project: string;
-  readonly name: string;
-  readonly version: string;
+  readonly project: string = process.env.GCP_PROJECT || '';
+  readonly name: string = getProjectID();
+  readonly version: string = 'latest';
+  readonly branch_env: string;
 
-  constructor(s: string) {
+  constructor(s: string, env = 'DEVELOP') {
+    this.branch_env = env;
+
     const sParts = s.split(':');
-    if (sParts.length < 2) {
-      throw new TypeError(`Invalid reference "${s}" - missing destination`);
+    if (sParts.length >= 2) {
+      this.output = sParts[0].trim();
     }
 
-    this.output = sParts[0].trim();
-
-    const ref = sParts.slice(1).join(':');
+    const ref = sParts.length < 2 ? sParts.slice().join(':') : sParts.slice(1).join(':');
     const refParts = ref.split('/');
     switch (refParts.length) {
       // projects/<p>/secrets/<s>/versions/<v>
@@ -55,7 +57,6 @@ export class Reference {
       case 4: {
         this.project = refParts[1];
         this.name = refParts[3];
-        this.version = 'latest';
         break;
       }
       // <p>/<s>/<v>
@@ -69,12 +70,23 @@ export class Reference {
       case 2: {
         this.project = refParts[0];
         this.name = refParts[1];
-        this.version = 'latest';
+        break;
+      }
+      case 1: {
+        this.name = refParts[0];
         break;
       }
       default: {
         throw new TypeError(`Invalid reference "${s}" - unknown format`);
       }
+    }
+
+    if (this.output === '') {
+      this.output = this.name;
+    }
+
+    if (this.output === '' || this.project === '' || this.name === '' || this.version === '') {
+      throw new TypeError(`Invalid reference "${s}" - unknown format`);
     }
   }
 
@@ -86,6 +98,15 @@ export class Reference {
   public selfLink(): string {
     return `projects/${this.project}/secrets/${this.name}/versions/${this.version}`;
   }
+
+  /**
+   * Returns the full GCP environment specific self link.
+   *
+   * @returns String self link.
+   */
+  public selfEnvironmentLink(): string {
+    return `projects/${this.project}/secrets/${this.branch_env}_${this.name}/versions/${this.version}`;
+  }
 }
 
 /**
@@ -96,12 +117,12 @@ export class Reference {
  * @returns Array of References for each secret, in the same order they were
  * given.
  */
-export function parseSecretsRefs(input: string): Reference[] {
+export function parseSecretsRefs(input: string, isProd = false): Reference[] {
   const secrets: Reference[] = [];
   for (const line of input.split(/\r|\n/)) {
     const pieces = parseCSV(line);
     for (const piece of pieces) {
-      secrets.push(new Reference(piece));
+      secrets.push(new Reference(piece, isProd ? 'PROD' : 'DEVELOP'));
     }
   }
   return secrets;

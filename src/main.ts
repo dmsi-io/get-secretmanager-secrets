@@ -16,6 +16,7 @@
 
 import { getInput, warning as logWarning, setFailed, setOutput, setSecret } from '@actions/core';
 import { Credential, parseCredential, errorMessage } from '@google-github-actions/actions-utils';
+import { isProductionRef } from './action';
 
 import { Client } from './client';
 import { parseSecretsRefs } from './reference';
@@ -28,6 +29,7 @@ async function run(): Promise<void> {
   try {
     // Fetch the list of secrets provided by the user.
     const secretsInput = getInput('secrets', { required: true });
+    const envSecretsInput = getInput('environment_secrets');
 
     // Get credentials, if any.
     const credentials = getInput('credentials');
@@ -50,6 +52,9 @@ async function run(): Promise<void> {
 
     // Parse all the provided secrets into references.
     const secretsRefs = parseSecretsRefs(secretsInput);
+
+    // Parse all the provided environment secrets into references.
+    const envSecretsRefs = parseSecretsRefs(envSecretsInput, isProductionRef());
 
     // Access and export each secret.
     for (const ref of secretsRefs) {
