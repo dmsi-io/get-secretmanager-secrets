@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { getInput, warning as logWarning, setFailed } from '@actions/core';
-import { Credential, parseCredential, errorMessage } from '@google-github-actions/actions-utils';
+import { getInput, setFailed } from '@actions/core';
+import { errorMessage } from '@google-github-actions/actions-utils';
 import { isProductionRef } from './production';
 
 import { Client } from './client';
