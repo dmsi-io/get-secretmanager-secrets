@@ -17,7 +17,7 @@
 import { GoogleAuth } from 'google-auth-library';
 import { Credential, errorMessage, fromBase64 } from '@google-github-actions/actions-utils';
 import { HttpClient } from '@actions/http-client';
-import { setOutput } from '@actions/core';
+import { setOutput, setSecret } from '@actions/core';
 
 // Do not listen to the linter - this can NOT be rewritten as an ES6 import statement.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -120,7 +120,7 @@ export class Client {
 
     // Split multiline secrets by line break and mask each line.
     // Read more here: https://github.com/actions/runner/issues/161
-    // value.split(/\r\n|\r|\n/g).forEach((line) => setSecret(line));
+    value.split(/\r\n|\r|\n/g).forEach((line) => setSecret(line));
 
     setOutput(output, value);
   }
