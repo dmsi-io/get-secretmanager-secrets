@@ -140,10 +140,6 @@ jobs:
   <project-id>/<secret-id>
   ```
 
-- `credentials`: (**Deprecated**) This input is deprecated. See [auth section](https://github.com/google-github-actions/get-secretmanager-secrets#via-google-github-actionsauth) for more details.
-  [Google Service Account JSON][sa] credentials,
-  typically sourced from a [GitHub Secret][gh-secret].
-
 ## Outputs
 
 Each secret is prefixed with an output name. The secret's resolved access value
@@ -180,7 +176,6 @@ permissions to access the secrets being requested.
 ### Via google-github-actions/auth
 
 Use [google-github-actions/auth](https://github.com/google-github-actions/auth) to authenticate the action. You can use [Workload Identity Federation][wif] or traditional [Service Account Key JSON][sa] authentication.
-by specifying the `credentials` input. This Action supports both the recommended [Workload Identity Federation][wif] based authentication and the traditional [Service Account Key JSON][sa] based auth.
 
 See [usage](https://github.com/google-github-actions/auth#usage) for more details.
 

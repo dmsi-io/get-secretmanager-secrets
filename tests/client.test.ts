@@ -36,12 +36,4 @@ describe('Client', function () {
     const client = new Client();
     expect(client.auth.jsonContent).eql(null);
   });
-
-  it('accesses secret versions with JSON creds', async function () {
-    if (!credentials || !secretVersionRef) this.skip();
-
-    const client = new Client({ credentials: parseCredential(credentials) });
-    const result = await client.accessSecret(secretVersionRef);
-    expect(result).to.be;
-  });
 });
