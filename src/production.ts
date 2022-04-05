@@ -1,5 +1,5 @@
 import { Octokit } from 'octokit';
-import { getGithubToken, getRefName, getRefType, getRepoOwner, getSha } from './action';
+import { getGithubToken, getRefName, getRefType, getRepo, getRepoOwner, getSha } from './action';
 
 export async function isProductionRef(): Promise<boolean> {
   const refName = getRefName();
@@ -27,7 +27,7 @@ export function isProductionBranch(ref?: string): boolean {
 export async function isProductionTag(): Promise<boolean> {
   const octokit = new Octokit({ auth: getGithubToken() });
   const owner = getRepoOwner();
-  const repo = getRepoOwner();
+  const repo = getRepo();
   const sha = getSha();
 
   try {
