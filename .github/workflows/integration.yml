@@ -46,14 +46,15 @@ jobs:
             password:${{ secrets.GET_SECRETMANAGER_SECRETS_SECRET_VERSION_REF }}
 
       - name: 'outputs'
-        run: echo '${{ steps.secrets.outputs.token }}${{ steps.secrets.outputs.password }}'
+        run: echo '${{ steps.secrets.outputs.token }}:${{ steps.secrets.outputs.password }}'
 
       - id: 'env_secrets'
         name: 'env_secrets'
         uses: './'
         with:
           env_secrets: |-
-            token:${{ secrets.GHA_KEY }}
+            token:GHA_KEY
+            GHA_KEY
 
       - name: 'outputs'
-        run: echo '${{ steps.env_secrets.outputs.token }}${{ steps.env_secrets.outputs.password }}'
+        run: echo '${{ steps.env_secrets.outputs.token }}:${{ steps.env_secrets.outputs.GHA_KEY }}'
