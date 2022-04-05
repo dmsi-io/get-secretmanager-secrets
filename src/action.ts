@@ -1,3 +1,6 @@
+import { getInput } from '@actions/core';
+import { Octokit } from 'octokit';
+
 export function getProjectID(): string {
   return (
     process.env.GCP_PROJECT ||
@@ -9,20 +12,80 @@ export function getProjectID(): string {
   );
 }
 
-export function isProductionRef(): boolean {
+function getRepoOwner(): string {
+  return process.env.GITHUB_REPOSITORY_OWNER || '';
+}
+
+function getRepo(): string {
+  const fullRepo = process.env.GITHUB_REPOSITORY || '';
+  const parts = fullRepo.split('/');
+
+  if (parts.length === 2) {
+    return parts[1];
+  }
+
+  return '';
+}
+
+function getSha(): string {
+  return process.env.GITHUB_SHA || '';
+}
+
+function isProdRef(ref?: string): boolean {
+  if (ref && (ref === 'main' || ref.match(/release\/*/))) {
+    return true;
+  }
+
+  return false;
+}
+
+export async function isProductionRef(): Promise<boolean> {
   const REF_NAME = process.env.GITHUB_REF_NAME;
   const REF_TYPE = process.env.GITHUB_REF_TYPE;
 
-  if (REF_TYPE === 'branch' && REF_NAME && (REF_NAME === 'main' || REF_NAME.match(/release\/*/))) {
+  if (REF_TYPE === 'branch' && isProdRef(REF_NAME)) {
     return true;
   }
 
   if (REF_TYPE === 'tag') {
-    return true;
+    const octokit = new Octokit({ auth: getInput('GHA_ACCESS_TOKEN') });
+    const owner = getRepoOwner();
+    const repo = getRepo();
+    const sha = getSha();
 
-    // Get all branches: https://api.github.com/repos/alehechka/gha-playground/branches (JS: https://docs.github.com/en/rest/reference/branches#list-branches)
-    // Retrieve timestamp from commit with: https://api.github.com/repos/alehechka/gha-playground/commits?sha=9289e8b99214c3fbe4da65a57cfd221bcc06ae2d&per_page=1 (JS: https://docs.github.com/en/rest/reference/commits#list-commits)
-    // Check each branch at exact time and check if there is a record with matching sha: https://api.github.com/repos/alehechka/gha-playground/commits?sha=main&since=2022-04-01T20:44:51Z&until=2022-04-01T20:44:51Z
+    try {
+      const branches = await octokit.request('GET /repos/{owner}/{repo}/branches', {
+        owner,
+        repo,
+      });
+      const branchNames = branches.data.map((branch) => branch.name).filter(isProdRef);
+
+      const commits = await octokit.request('GET /repos/{owner}/{repo}/commits', {
+        owner,
+        repo,
+        sha,
+        per_page: 1,
+      });
+      const commitDate = commits.data[0]?.commit.committer?.date;
+      if (!commitDate) return false;
+
+      for (const branchName of branchNames) {
+        const branchCommits = await octokit.request('GET /repos/{owner}/{repo}/commits', {
+          owner,
+          repo,
+          sha: branchName,
+          per_page: 1,
+          since: commitDate,
+          until: commitDate,
+        });
+        if (branchCommits.data.length === 0) continue;
+        if (branchCommits.data[0].sha === sha) return true;
+      }
+    } catch (error) {
+      return false;
+    }
+
+    return false;
   }
 
   return false;

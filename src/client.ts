@@ -17,6 +17,7 @@
 import { GoogleAuth } from 'google-auth-library';
 import { Credential, errorMessage, fromBase64 } from '@google-github-actions/actions-utils';
 import { HttpClient } from '@actions/http-client';
+import { setOutput } from '@actions/core';
 
 // Do not listen to the linter - this can NOT be rewritten as an ES6 import statement.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -106,5 +107,21 @@ export class Client {
       const msg = errorMessage(err);
       throw new Error(`Failed to access secret "${ref}": ${msg}`);
     }
+  }
+
+  /**
+   * Retrieves the secret by name and outputs it from the GitHub Action
+   *
+   * @param output Output value
+   * @param link String of the full secret reference.
+   */
+  async outputSecret(output: string, link: string) {
+    const value = await this.accessSecret(link);
+
+    // Split multiline secrets by line break and mask each line.
+    // Read more here: https://github.com/actions/runner/issues/161
+    // value.split(/\r\n|\r|\n/g).forEach((line) => setSecret(line));
+
+    setOutput(output, value);
   }
 }

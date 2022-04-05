@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { getInput, warning as logWarning, setFailed, setOutput, setSecret } from '@actions/core';
+import { getInput, warning as logWarning, setFailed } from '@actions/core';
 import { Credential, parseCredential, errorMessage } from '@google-github-actions/actions-utils';
 import { isProductionRef } from './action';
 
@@ -28,8 +28,8 @@ import { parseSecretsRefs } from './reference';
 async function run(): Promise<void> {
   try {
     // Fetch the list of secrets provided by the user.
-    const secretsInput = getInput('secrets', { required: true });
-    const envSecretsInput = getInput('environment_secrets');
+    const secretsInput = getInput('secrets');
+    const envSecretsInput = getInput('env_secrets');
 
     // Get credentials, if any.
     const credentials = getInput('credentials');
@@ -52,23 +52,20 @@ async function run(): Promise<void> {
 
     // Parse all the provided secrets into references.
     const secretsRefs = parseSecretsRefs(secretsInput);
-
-    // Parse all the provided environment secrets into references.
-    const envSecretsRefs = parseSecretsRefs(envSecretsInput, isProductionRef());
-
     // Access and export each secret.
     for (const ref of secretsRefs) {
-      const value = await client.accessSecret(ref.selfLink());
+      client.outputSecret(ref.output, ref.selfLink());
+    }
 
-      // Split multiline secrets by line break and mask each line.
-      // Read more here: https://github.com/actions/runner/issues/161
-      value.split(/\r\n|\r|\n/g).forEach((line) => setSecret(line));
-
-      setOutput(ref.output, value);
+    // Parse all the provided environment secrets into references.
+    const envSecretsRefs = parseSecretsRefs(envSecretsInput, await isProductionRef());
+    // Access and export each secret.
+    for (const ref of envSecretsRefs) {
+      client.outputSecret(ref.output, ref.selfEnvironmentLink());
     }
   } catch (err) {
     const msg = errorMessage(err);
-    setFailed(`google-github-actions/get-secretmanager-secrets failed with: ${msg}`);
+    setFailed(`dmsi-io/gha-secret-manager-env failed with: ${msg}`);
   }
 }
 
