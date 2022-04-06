@@ -51,11 +51,43 @@ describe('Reference', () => {
     expect(fn).to.throw(TypeError);
   });
 
-  it('errors on missing output', () => {
+  it('parses a environment secret', () => {
+    process.env.GCP_PROJECT = 'my-project';
+    const ref = new Reference('out:TOKEN');
+    const link = ref.selfLink();
+    expect(link).equal('projects/my-project/secrets/TOKEN/versions/latest');
+    expect(ref.output).equal('out');
+    process.env.GCP_PROJECT = '';
+  });
+
+  it('errors on no GCP_PROJECT in env', () => {
     const fn = (): Reference => {
-      return new Reference('fruits/apple/123');
+      return new Reference('out:TOKEN');
     };
     expect(fn).to.throw(TypeError);
+  });
+
+  it('parses with no output', () => {
+    const ref = new Reference('my-project/TOKEN/123');
+    const link = ref.selfLink();
+    expect(link).equal('projects/my-project/secrets/TOKEN/versions/123');
+    expect(ref.output).equal('TOKEN');
+  });
+
+  it('parses environment secret', () => {
+    const ref = new Reference('my-project/TOKEN/123');
+    const link = ref.selfEnvironmentLink();
+    expect(link).equal('projects/my-project/secrets/DEVELOP_TOKEN/versions/123');
+    expect(ref.output).equal('TOKEN');
+    expect(ref.branch_env).equal('DEVELOP');
+  });
+
+  it('parses provided environment secret', () => {
+    const ref = new Reference('my-project/TOKEN/123', 'PROD');
+    const link = ref.selfEnvironmentLink();
+    expect(link).equal('projects/my-project/secrets/PROD_TOKEN/versions/123');
+    expect(ref.output).equal('TOKEN');
+    expect(ref.branch_env).equal('PROD');
   });
 });
 
@@ -106,8 +138,13 @@ describe('#parseSecretsRefs', () => {
       ],
     },
     {
-      name: 'invalid input',
-      input: 'not/valid',
+      name: 'no output provided',
+      input: 'project/secret',
+      expected: [new Reference('secret:project/secret')],
+    },
+    {
+      name: 'environment secret with no GCP_PROJECT in env',
+      input: 'TOKEN',
       error: 'Invalid reference',
     },
   ];

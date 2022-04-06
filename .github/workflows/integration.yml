@@ -3,10 +3,10 @@ name: 'integration'
 on:
   push:
     branches:
-    - 'main'
+      - 'main'
   pull_request:
     branches:
-    - 'main'
+      - 'main'
   workflow_dispatch:
 
 concurrency:
@@ -22,59 +22,41 @@ jobs:
       id-token: 'write'
     runs-on: 'ubuntu-latest'
     steps:
-    - uses: 'actions/checkout@v3'
+      - uses: 'actions/checkout@v3'
 
-    - uses: 'actions/setup-node@v2'
-      with:
-        node-version: '16.x'
+      - uses: 'actions/setup-node@v2'
+        with:
+          node-version: '16.x'
 
-    - name: 'npm build'
-      run: 'npm ci && npm run build'
+      - name: 'npm build'
+        run: 'npm ci && npm run build'
 
-    - uses: 'google-github-actions/auth@main'
-      with:
-        workload_identity_provider: '${{ secrets.WIF_PROVIDER_NAME }}'
-        service_account: '${{ secrets.GET_SECRETMANAGER_SECRETS_SA_EMAIL }}'
+      - uses: 'google-github-actions/auth@main'
+        with:
+          workload_identity_provider: '${{ secrets.WIF_PROVIDER_NAME }}'
+          service_account: '${{ secrets.GET_SECRETMANAGER_SECRETS_SA_EMAIL }}'
 
-    - id: 'secrets'
-      name: 'secrets'
-      uses: './'
-      with:
-        secrets: |-
-          token:${{ secrets.GET_SECRETMANAGER_SECRETS_SECRET_REF }}
-          password:${{ secrets.GET_SECRETMANAGER_SECRETS_SECRET_VERSION_REF }}
+      - id: 'secrets'
+        name: 'secrets'
+        uses: './'
+        with:
+          secrets: |-
+            token:${{ secrets.GET_SECRETMANAGER_SECRETS_SECRET_REF }}
+            password:${{ secrets.GET_SECRETMANAGER_SECRETS_SECRET_VERSION_REF }}
 
-    - name: 'outputs'
-      run: echo '${{ steps.secrets.outputs.token }}${{ steps.secrets.outputs.password }}'
+      - name: 'outputs'
+        run: echo '${{ steps.secrets.outputs.token }}:${{ steps.secrets.outputs.password }}'
 
-  auth_credentials:
-    if: ${{ github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name && github.actor != 'dependabot[bot]' }}
-    name: 'auth_credentials'
-    runs-on: 'ubuntu-latest'
-    steps:
-    - uses: 'actions/checkout@v3'
+      - id: 'env_secrets'
+        name: 'env_secrets'
+        uses: './'
+        with:
+          env_secrets: |-
+            token:GHA_KEY
+            GHA_KEY
 
-    - uses: 'actions/setup-node@v2'
-      with:
-        node-version: '16.x'
-
-    - name: 'npm build'
-      run: 'npm ci && npm run build'
-
-    - uses: 'google-github-actions/auth@main'
-      with:
-        credentials_json: '${{ secrets.GET_SECRETMANAGER_SECRETS_SA_KEY_B64 }}'
-
-    - id: 'secrets'
-      name: 'secrets'
-      uses: './'
-      with:
-        secrets: |-
-          token:${{ secrets.GET_SECRETMANAGER_SECRETS_SECRET_REF }}
-          password:${{ secrets.GET_SECRETMANAGER_SECRETS_SECRET_VERSION_REF }}
-
-    - name: 'outputs'
-      run: echo '${{ steps.secrets.outputs.token }}${{ steps.secrets.outputs.password }}'
+      - name: 'outputs'
+        run: echo '${{ steps.env_secrets.outputs.token }}:${{ steps.env_secrets.outputs.GHA_KEY }}'
 
   # Deprecated
   json:
@@ -82,23 +64,23 @@ jobs:
     name: 'json'
     runs-on: 'ubuntu-latest'
     steps:
-    - uses: 'actions/checkout@v3'
+      - uses: 'actions/checkout@v3'
 
-    - uses: 'actions/setup-node@v2'
-      with:
-        node-version: '16.x'
+      - uses: 'actions/setup-node@v2'
+        with:
+          node-version: '16.x'
 
-    - name: 'npm build'
-      run: 'npm ci && npm run build'
+      - name: 'npm build'
+        run: 'npm ci && npm run build'
 
-    - id: 'secrets'
-      name: 'secrets'
-      uses: './'
-      with:
-        credentials: '${{ secrets.GET_SECRETMANAGER_SECRETS_SA_KEY_JSON }}'
-        secrets: |-
-          token:${{ secrets.GET_SECRETMANAGER_SECRETS_SECRET_REF }}
-          password:${{ secrets.GET_SECRETMANAGER_SECRETS_SECRET_VERSION_REF }}
+      - id: 'secrets'
+        name: 'secrets'
+        uses: './'
+        with:
+          credentials: '${{ secrets.GET_SECRETMANAGER_SECRETS_SA_KEY_JSON }}'
+          secrets: |-
+            token:${{ secrets.GET_SECRETMANAGER_SECRETS_SECRET_REF }}
+            password:${{ secrets.GET_SECRETMANAGER_SECRETS_SECRET_VERSION_REF }}
 
-    - name: 'outputs'
-      run: echo '${{ steps.secrets.outputs.token }}${{ steps.secrets.outputs.password }}'
+      - name: 'outputs'
+        run: echo '${{ steps.secrets.outputs.token }}${{ steps.secrets.outputs.password }}'
