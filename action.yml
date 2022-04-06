@@ -38,6 +38,13 @@ inputs:
       Required only if the acting repository is private.
     required: false
 
+  credentials:
+    required: false
+    description: |-
+      Service account key to use for authentication. This should be the JSON
+      formatted private key which can be exported from the Cloud Console. The
+      value can be raw or base64-encoded.
+
 branding:
   icon: 'lock'
   color: 'blue'

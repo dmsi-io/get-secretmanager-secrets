@@ -57,3 +57,30 @@ jobs:
 
       - name: 'outputs'
         run: echo '${{ steps.env_secrets.outputs.token }}:${{ steps.env_secrets.outputs.GHA_KEY }}'
+
+  # Deprecated
+  json:
+    if: ${{ github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name && github.actor != 'dependabot[bot]' }}
+    name: 'json'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: 'actions/checkout@v3'
+
+      - uses: 'actions/setup-node@v2'
+        with:
+          node-version: '16.x'
+
+      - name: 'npm build'
+        run: 'npm ci && npm run build'
+
+      - id: 'secrets'
+        name: 'secrets'
+        uses: './'
+        with:
+          credentials: '${{ secrets.GET_SECRETMANAGER_SECRETS_SA_KEY_JSON }}'
+          secrets: |-
+            token:${{ secrets.GET_SECRETMANAGER_SECRETS_SECRET_REF }}
+            password:${{ secrets.GET_SECRETMANAGER_SECRETS_SECRET_VERSION_REF }}
+
+      - name: 'outputs'
+        run: echo '${{ steps.secrets.outputs.token }}${{ steps.secrets.outputs.password }}'
