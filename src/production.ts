@@ -1,4 +1,3 @@
-import { info as logInfo } from '@actions/core';
 import { Octokit } from 'octokit';
 import { getGithubToken, getRefName, getRefType, getRepo, getRepoOwner, getSha } from './action';
 
@@ -31,17 +30,25 @@ export async function isProductionTag(): Promise<boolean> {
   const repo = getRepo();
   const sha = getSha();
 
-  logInfo(JSON.stringify({ owner, repo, sha }));
-
   try {
     // Get all branch names that are valid "production" branches
-    const branches = await octokit.request('GET /repos/{owner}/{repo}/branches', {
-      owner,
-      repo,
-    });
-    logInfo(JSON.stringify({ rawbranchNames: branches.data.map((branch) => branch.name) }));
-    const branchNames = branches.data.map((branch) => branch.name).filter(isProductionBranch);
-    logInfo(JSON.stringify({ branchNames }));
+    let page = 0;
+    const branches: any[] = [];
+    do {
+      const paginatedBranches = await octokit.request('GET /repos/{owner}/{repo}/branches', {
+        owner,
+        repo,
+        per_page: 100,
+        page,
+      });
+      branches.push(...paginatedBranches.data);
+
+      if (paginatedBranches.data.length === 0) {
+        break;
+      }
+    } while (++page);
+
+    const branchNames = branches.map((branch) => branch.name).filter(isProductionBranch);
     if (branchNames.length === 0) return false;
 
     // Get timestamp of commit that tag is pointing to
@@ -52,7 +59,6 @@ export async function isProductionTag(): Promise<boolean> {
       per_page: 1,
     });
     const commitDate = commits.data[0]?.commit.committer?.date;
-    logInfo(JSON.stringify({ commitDate }));
     if (!commitDate) return false;
 
     // Check all valid branches for the existence of the tag sha
@@ -65,12 +71,6 @@ export async function isProductionTag(): Promise<boolean> {
         since: commitDate,
         until: commitDate,
       });
-      logInfo(
-        JSON.stringify({
-          branchName,
-          branchCommits: branchCommits.data.map((commit) => commit.sha),
-        }),
-      );
       for (const commit of branchCommits.data) {
         if (commit.sha === sha) return true;
       }
