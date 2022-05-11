@@ -39,6 +39,7 @@ export async function isProductionTag(): Promise<boolean> {
       owner,
       repo,
     });
+    logInfo(JSON.stringify({ rawbranchNames: branches.data.map((branch) => branch.name) }));
     const branchNames = branches.data.map((branch) => branch.name).filter(isProductionBranch);
     logInfo(JSON.stringify({ branchNames }));
     if (branchNames.length === 0) return false;
