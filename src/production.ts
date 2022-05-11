@@ -1,3 +1,4 @@
+import { components } from '@octokit/openapi-types';
 import { Octokit } from 'octokit';
 import { getGithubToken, getRefName, getRefType, getRepo, getRepoOwner, getSha } from './action';
 
@@ -33,7 +34,7 @@ export async function isProductionTag(): Promise<boolean> {
   try {
     // Get all branch names that are valid "production" branches
     let page = 0;
-    const branches: any[] = [];
+    const branches: components['schemas']['short-branch'][] = [];
     do {
       const paginatedBranches = await octokit.request('GET /repos/{owner}/{repo}/branches', {
         owner,
