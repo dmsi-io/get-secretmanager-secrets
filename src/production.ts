@@ -32,11 +32,23 @@ export async function isProductionTag(): Promise<boolean> {
 
   try {
     // Get all branch names that are valid "production" branches
-    const branches = await octokit.request('GET /repos/{owner}/{repo}/branches', {
-      owner,
-      repo,
-    });
-    const branchNames = branches.data.map((branch) => branch.name).filter(isProductionBranch);
+    let page = 0;
+    const branches: any[] = [];
+    do {
+      const paginatedBranches = await octokit.request('GET /repos/{owner}/{repo}/branches', {
+        owner,
+        repo,
+        per_page: 100,
+        page,
+      });
+      branches.push(...paginatedBranches.data);
+
+      if (paginatedBranches.data.length === 0) {
+        break;
+      }
+    } while (++page);
+
+    const branchNames = branches.map((branch) => branch.name).filter(isProductionBranch);
     if (branchNames.length === 0) return false;
 
     // Get timestamp of commit that tag is pointing to
