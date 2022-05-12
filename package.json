@@ -29,6 +29,7 @@
     "octokit": "^1.7.1"
   },
   "devDependencies": {
+    "@octokit/openapi-types": "^11.2.0",
     "@types/chai": "^4.3.0",
     "@types/mocha": "^9.1.0",
     "@types/node": "^17.0.21",
