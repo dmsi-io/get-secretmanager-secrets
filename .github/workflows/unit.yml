@@ -9,8 +9,9 @@ on:
       - 'main'
   workflow_dispatch:
 
+# Kill the workflow if the PR is updated with a new commit
 concurrency:
-  group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -23,12 +24,17 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '16'
+          cache: 'yarn'
+
+      - name: Install
+        run: yarn install --frozen-lockfile --prefer-offline
+        shell: bash
 
       - name: 'build'
-        run: 'yarn build'
+        run: yarn build
 
       - name: 'lint'
-        run: 'yarn lint'
+        run: yarn lint
 
       - name: 'test'
-        run: 'yarn test'
+        run: yarn test

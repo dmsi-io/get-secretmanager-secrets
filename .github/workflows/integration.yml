@@ -9,8 +9,9 @@ on:
       - 'main'
   workflow_dispatch:
 
+# Kill the workflow if the PR is updated with a new commit
 concurrency:
-  group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -28,10 +29,14 @@ jobs:
         with:
           node-version: '16'
 
-      - name: 'npm build'
-        run: 'npm ci && npm run build'
+      - name: Install
+        run: yarn install --frozen-lockfile --prefer-offline
+        shell: bash
 
-      - uses: 'google-github-actions/auth@main'
+      - name: 'build'
+        run: yarn build
+
+      - uses: google-github-actions/auth@main
         with:
           workload_identity_provider: '${{ secrets.WIF_PROVIDER_NAME }}'
           service_account: '${{ secrets.GET_SECRETMANAGER_SECRETS_SA_EMAIL }}'
@@ -69,6 +74,11 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '16'
+          cache: 'yarn'
+
+      - name: Install
+        run: yarn install --frozen-lockfile --prefer-offline
+        shell: bash
 
       - name: 'build'
         run: 'yarn build'
